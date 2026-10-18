@@ -141,8 +141,8 @@ def get_falkordb_client() -> FalkorDB:
 
     # Check if PYTHON_DOTENV_DISABLED is set and if so, don't default to .env values
     if os.getenv("PYTHON_DOTENV_DISABLED") != "1":
-        # Try to get port from environment, fall back to 6379 if not set
-        falkordb_port = os.getenv("FALKORDB_PORT", "6379")
+        # Try to get port from environment, fall back to 6380 (local Docker) then 6379
+        falkordb_port = os.getenv("FALKORDB_PORT", "6380")
     else:
         # If .env is disabled, always use 6379 as the default
         falkordb_port = os.getenv("FALKORDB_PORT", "6379")
