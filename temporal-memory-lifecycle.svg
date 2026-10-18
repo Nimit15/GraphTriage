@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="1000" height="500">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="activeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#16a34a"/>
+    </linearGradient>
+    <linearGradient id="supersededGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="expiredGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444"/>
+      <stop offset="100%" style="stop-color:#dc2626"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+    <marker id="supersededArrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="500" fill="url(#bgGrad)"/>
+
+  <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(148,163,184,0.04)" stroke-width="0.5"/>
+  </pattern>
+  <rect width="1000" height="500" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <text x="500" y="35" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="white">Temporal Memory Lifecycle — SemanticFact States</text>
+
+  <!-- Timeline axis -->
+  <line x1="80" y1="120" x2="920" y2="120" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Time markers -->
+  <g font-family="system-ui" font-size="10" fill="#94a3b8">
+    <text x="100" y="145" text-anchor="middle">t0</text>
+    <text x="300" y="145" text-anchor="middle">t1</text>
+    <text x="500" y="145" text-anchor="middle">t2</text>
+    <text x="700" y="145" text-anchor="middle">t3</text>
+    <text x="900" y="145" text-anchor="middle">t4</text>
+  </g>
+
+  <!-- FACT V1 - Initial creation -->
+  <g transform="translate(100, 180)">
+    <!-- Node -->
+    <rect x="0" y="0" width="160" height="100" rx="10" fill="url(#activeGrad)" filter="url(#shadow)"/>
+    <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">FACT V1</text>
+    <text x="80" y="40" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">"Function requires</text>
+    <text x="80" y="54" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">input validation"</text>
+
+    <line x1="10" y1="68" x2="150" y2="68" stroke="rgba(255,255,255,0.3)"/>
+
+    <g font-family="system-ui" font-size="8" fill="rgba(255,255,255,0.8)">
+      <text x="10" y="82">valid_from: t0</text>
+      <text x="10" y="94">valid_to: null</text>
+    </g>
+    <text x="130" y="82" text-anchor="end" font-family="system-ui" font-size="8" fill="#22c55e" font-weight="600">ACTIVE</text>
+
+    <!-- Timeline bar -->
+    <rect x="-80" y="120" width="320" height="8" rx="4" fill="url(#activeGrad)" opacity="0.3"/>
+    <circle cx="-80" cy="124" r="6" fill="#22c55e"/>
+    <text x="-80" y="155" text-anchor="middle" font-family="system-ui" font-size="9" fill="#22c55e">created</text>
+  </g>
+
+  <!-- FACT V2 - Supersedes V1 -->
+  <g transform="translate(300, 180)">
+    <!-- Superseded edge from V1 -->
+    <path d="M -80 50 Q 20 0 100 50" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#supersededArrow)" fill="none" stroke-dasharray="8,4"/>
+    <text x="10" y="20" text-anchor="middle" font-family="system-ui" font-size="8" fill="#f59e0b" font-weight="600">SUPERSEDES</text>
+
+    <!-- Node -->
+    <rect x="0" y="0" width="160" height="100" rx="10" fill="url(#activeGrad)" filter="url(#shadow)"/>
+    <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">FACT V2</text>
+    <text x="80" y="40" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">"Use .get() with</text>
+    <text x="80" y="54" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">default value"</text>
+
+    <line x1="10" y1="68" x2="150" y2="68" stroke="rgba(255,255,255,0.3)"/>
+
+    <g font-family="system-ui" font-size="8" fill="rgba(255,255,255,0.8)">
+      <text x="10" y="82">valid_from: t1</text>
+      <text x="10" y="94">valid_to: null</text>
+    </g>
+    <text x="130" y="82" text-anchor="end" font-family="system-ui" font-size="8" fill="#22c55e" font-weight="600">ACTIVE</text>
+
+    <!-- Timeline bar -->
+    <rect x="-80" y="120" width="320" height="8" rx="4" fill="url(#activeGrad)" opacity="0.3"/>
+    <circle cx="-80" cy="124" r="6" fill="#22c55e"/>
+    <text x="-80" y="155" text-anchor="middle" font-family="system-ui" font-size="9" fill="#22c55e">t1</text>
+  </g>
+
+  <!-- FACT V1 now superseded -->
+  <g transform="translate(100, 180)">
+    <!-- Update V1 status -->
+    <rect x="130" y="82" width="35" height="14" rx="4" fill="url(#supersededGrad)"/>
+    <text x="147" y="93" text-anchor="middle" font-family="system-ui" font-size="7" font-weight="700" fill="white">SUPERSEDED</text>
+  </g>
+
+  <!-- FACT V3 - Supersedes V2 -->
+  <g transform="translate(500, 180)">
+    <!-- Superseded edge from V2 -->
+    <path d="M -80 50 Q 20 0 100 50" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#supersededArrow)" fill="none" stroke-dasharray="8,4"/>
+    <text x="10" y="20" text-anchor="middle" font-family="system-ui" font-size="8" fill="#f59e0b" font-weight="600">SUPERSEDES</text>
+
+    <!-- Node -->
+    <rect x="0" y="0" width="160" height="100" rx="10" fill="url(#activeGrad)" filter="url(#shadow)"/>
+    <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">FACT V3</text>
+    <text x="80" y="40" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">"Add schema</text>
+    <text x="80" y="54" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">validation at API"</text>
+
+    <line x1="10" y1="68" x2="150" y2="68" stroke="rgba(255,255,255,0.3)"/>
+
+    <g font-family="system-ui" font-size="8" fill="rgba(255,255,255,0.8)">
+      <text x="10" y="82">valid_from: t2</text>
+      <text x="10" y="94">valid_to: null</text>
+    </g>
+    <text x="130" y="82" text-anchor="end" font-family="system-ui" font-size="8" fill="#22c55e" font-weight="600">ACTIVE</text>
+
+    <!-- Timeline bar -->
+    <rect x="-80" y="120" width="320" height="8" rx="4" fill="url(#activeGrad)" opacity="0.3"/>
+    <circle cx="-80" cy="124" r="6" fill="#22c55e"/>
+    <text x="-80" y="155" text-anchor="middle" font-family="system-ui" font-size="9" fill="#22c55e">t2</text>
+  </g>
+
+  <!-- FACT V2 now superseded -->
+  <g transform="translate(300, 180)">
+    <rect x="130" y="82" width="35" height="14" rx="4" fill="url(#supersededGrad)"/>
+    <text x="147" y="93" text-anchor="middle" font-family="system-ui" font-size="7" font-weight="700" fill="white">SUPERSEDED</text>
+  </g>
+
+  <!-- FACT V4 - Expired (archived) -->
+  <g transform="translate(700, 180)">
+    <!-- Superseded edge from V3 -->
+    <path d="M -80 50 Q 20 0 100 50" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#supersededArrow)" fill="none" stroke-dasharray="8,4"/>
+    <text x="10" y="20" text-anchor="middle" font-family="system-ui" font-size="8" fill="#f59e0b" font-weight="600">SUPERSEDES</text>
+
+    <!-- Node -->
+    <rect x="0" y="0" width="160" height="100" rx="10" fill="url(#expiredGrad)" filter="url(#shadow)" opacity="0.7"/>
+    <text x="80" y="22" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">FACT V4</text>
+    <text x="80" y="40" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">"Legacy pattern</text>
+    <text x="80" y="54" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.9)">archived"</text>
+
+    <line x1="10" y1="68" x2="150" y2="68" stroke="rgba(255,255,255,0.3)"/>
+
+    <g font-family="system-ui" font-size="8" fill="rgba(255,255,255,0.8)">
+      <text x="10" y="82">valid_from: t3</text>
+      <text x="10" y="94">valid_to: t4</text>
+    </g>
+    <text x="130" y="82" text-anchor="end" font-family="system-ui" font-size="8" fill="#ef4444" font-weight="600">EXPIRED</text>
+
+    <!-- Timeline bar -->
+    <rect x="-80" y="120" width="200" height="8" rx="4" fill="url(#expiredGrad)" opacity="0.3"/>
+    <circle cx="-80" cy="124" r="6" fill="#ef4444"/>
+    <circle cx="120" cy="124" r="6" fill="#ef4444"/>
+    <text x="-80" y="155" text-anchor="middle" font-family="system-ui" font-size="9" fill="#ef4444">t3</text>
+    <text x="120" y="155" text-anchor="middle" font-family="system-ui" font-size="9" fill="#ef4444">t4</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(50, 320)">
+    <rect x="0" y="0" width="400" height="140" rx="10" fill="rgba(15,23,42,0.8)" stroke="#334155" stroke-width="1.5"/>
+    <text x="200" y="25" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="white">State Definitions &amp; Cypher Operations</text>
+
+    <!-- ACTIVE -->
+    <g transform="translate(20, 40)">
+      <rect x="0" y="0" width="18" height="18" rx="4" fill="url(#activeGrad)"/>
+      <text x="28" y="14" font-family="system-ui" font-size="10" font-weight="600" fill="#22c55e">ACTIVE</text>
+      <text x="28" y="28" font-family="system-ui" font-size="8" fill="#94a3b8">valid_to = null</text>
+      <text x="28" y="40" font-family="system-ui" font-size="8" fill="#94a3b8">Current truth, queryable</text>
+    </g>
+
+    <!-- SUPERSEDED -->
+    <g transform="translate(20, 85)">
+      <rect x="0" y="0" width="18" height="18" rx="4" fill="url(#supersededGrad)"/>
+      <text x="28" y="14" font-family="system-ui" font-size="10" font-weight="600" fill="#f59e0b">SUPERSEDED</text>
+      <text x="28" y="28" font-family="system-ui" font-size="8" fill="#94a3b8">valid_to = timestamp</text>
+      <text x="28" y="40" font-family="system-ui" font-size="8" fill="#94a3b8">Historical, linked via :SUPERSEDES</text>
+    </g>
+
+    <!-- EXPIRED -->
+    <g transform="translate(220, 40)">
+      <rect x="0" y="0" width="18" height="18" rx="4" fill="url(#expiredGrad)"/>
+      <text x="28" y="14" font-family="system-ui" font-size="10" font-weight="600" fill="#ef4444">EXPIRED</text>
+      <text x="28" y="28" font-family="system-ui" font-size="8" fill="#94a3b8">valid_to &lt; now</text>
+      <text x="28" y="40" font-family="system-ui" font-size="8" fill="#94a3b8">Archived, retention policy</text>
+    </g>
+
+    <g transform="translate(220, 85)">
+      <text x="0" y="14" font-family="system-ui" font-size="10" font-weight="600" fill="#8b5cf6">Cypher: create_semantic_fact()</text>
+      <text x="0" y="28" font-family="system-ui" font-size="9" fill="#94a3b8">MATCH (f:SemanticFact {id: $id})</text>
+      <text x="0" y="40" font-family="system-ui" font-size="9" fill="#94a3b8">SET f.valid_to = $now, f.status = 'SUPERSEDED'</text>
+      <text x="0" y="52" font-family="system-ui" font-size="9" fill="#94a3b8">CREATE (f)-[:SUPERSEDES]->(newFact)</text>
+    </g>
+  </g>
+
+  <!-- Query patterns -->
+  <g transform="translate(500, 320)">
+    <rect x="0" y="0" width="450" height="140" rx="10" fill="rgba(15,23,42,0.8)" stroke="#334155" stroke-width="1.5"/>
+    <text x="225" y="25" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="white">Query Patterns</text>
+
+    <g font-family="monospace" font-size="9" fill="#e2e8f0" transform="translate(20, 45)">
+      <text x="0" y="0">// Get ACTIVE facts only (current truth)</text>
+      <text x="0" y="18">MATCH (f:SemanticFact)</text>
+      <text x="20" y="18">WHERE f.function_name = $fn</text>
+      <text x="20" y="36">AND f.valid_to IS NULL</text>
+      <text x="20" y="54">AND f.status = 'ACTIVE'</text>
+      <text x="0" y="72">RETURN f</text>
+
+      <text x="0" y="90">// Get full history with supersession chain</text>
+      <text x="0" y="108">MATCH (f:SemanticFact)</text>
+      <text x="20" y="108">WHERE f.function_name = $fn</text>
+      <text x="0" y="126">OPTIONAL MATCH (f)-[:SUPERSEDES*]->(next)</text>
+      <text x="0" y="144">RETURN f, collect(next) ORDER BY f.valid_from</text>
+    </g>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(50, 470)">
+    <rect x="0" y="0" width="900" height="25" rx="6" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" stroke-width="1"/>
+    <text x="450" y="17" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="500" fill="#06b6d4">
+      Key Insight: Temporal edges (valid_from/valid_to + SUPERSEDES) enable point-in-time queries and full audit trail without data loss
+    </text>
+  </g>
+</svg>

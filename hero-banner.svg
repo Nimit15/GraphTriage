@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bgGradient)"/>
+
+  <!-- Subtle grid pattern -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(6,182,212,0.05)" stroke-width="0.5"/>
+  </pattern>
+  <rect width="1200" height="300" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <text x="600" y="105" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="white" filter="url(#textGlow)">
+    GraphTriage
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="145" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="400" fill="#94a3b8">
+    Graph-Based Incident Resolver with FalkorDB
+  </text>
+
+  <!-- Track badges -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600">
+    <rect x="480" y="165" width="110" height="28" rx="14" fill="rgba(6,182,212,0.2)" stroke="#06b6d4" stroke-width="1.5"/>
+    <text x="535" y="185" text-anchor="middle" fill="#06b6d4">Track 1</text>
+
+    <rect x="610" y="165" width="110" height="28" rx="14" fill="rgba(139,92,246,0.2)" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="665" y="185" text-anchor="middle" fill="#8b5cf6">Track 2</text>
+  </g>
+
+  <!-- Divider line with gradient -->
+  <line x1="350" y1="210" x2="850" y2="210" stroke="url(#accentGradient)" stroke-width="2" opacity="0.5"/>
+
+  <!-- Feature tags -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#64748b">
+    <text x="400" y="235" text-anchor="middle">shortestPath Tracing</text>
+    <text x="600" y="235" text-anchor="middle">PageRank Blast Radius</text>
+    <text x="800" y="235" text-anchor="middle">Three-Tier Temporal Memory</text>
+
+    <text x="400" y="260" text-anchor="middle" fill="#475569">Multi-Agent Pipeline</text>
+    <text x="600" y="260" text-anchor="middle" fill="#475569">Workspace Isolation</text>
+    <text x="800" y="260" text-anchor="middle" fill="#475569">MCP Integration</text>
+  </g>
+
+  <!-- Database badge -->
+  <g transform="translate(950, 30)">
+    <rect x="0" y="0" width="220" height="40" rx="20" fill="rgba(236,72,153,0.15)" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="110" y="26" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ec4899">Primary: FalkorDB</text>
+  </g>
+
+  <!-- Decorative nodes -->
+  <g filter="url(#glow)">
+    <circle cx="100" cy="150" r="4" fill="#06b6d4" opacity="0.6">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1100" cy="150" r="4" fill="#8b5cf6" opacity="0.6">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="3s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+    <circle cx="200" cy="80" r="3" fill="#ec4899" opacity="0.5">
+      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1000" cy="80" r="3" fill="#06b6d4" opacity="0.5">
+      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    </circle>
+  </g>
+</svg>
