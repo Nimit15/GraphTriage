@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="360" viewBox="0 0 1440 360" role="img" aria-labelledby="title desc">
+  <title id="title">GraphTriage</title>
+  <desc id="desc">Graph-grounded incident resolution and temporal memory, backed by FalkorDB.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0B1726"/><stop offset="1" stop-color="#14283A"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#FF8101"/><stop offset="1" stop-color="#FFB454"/></linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#22D3EE"/><stop offset="1" stop-color="#FF8101"/></linearGradient>
+  </defs>
+  <rect width="1440" height="360" rx="18" fill="url(#bg)"/>
+  <path d="M0 302 H1440" stroke="#2A4052" stroke-width="1"/>
+  <g opacity=".9" stroke="url(#line)" stroke-width="2" fill="none">
+    <path d="M858 92 L962 54 L1068 111 L1178 61 L1290 119 L1372 82"/>
+    <path d="M858 92 L882 192 L1008 222 L1068 111 L1168 226 L1290 119 L1334 238"/>
+    <path d="M962 54 L1008 222 L1168 226 L1290 119"/>
+    <path d="M882 192 L954 276 L1108 278 L1168 226 L1334 238 L1380 294"/>
+  </g>
+  <g fill="#0D2235" stroke="#22D3EE" stroke-width="2">
+    <circle cx="858" cy="92" r="13"/><circle cx="962" cy="54" r="10"/><circle cx="1068" cy="111" r="18"/><circle cx="1178" cy="61" r="12"/><circle cx="1290" cy="119" r="17"/><circle cx="1372" cy="82" r="9"/><circle cx="882" cy="192" r="11"/><circle cx="1008" cy="222" r="13"/><circle cx="1168" cy="226" r="18"/><circle cx="1334" cy="238" r="12"/><circle cx="954" cy="276" r="9"/><circle cx="1108" cy="278" r="10"/><circle cx="1380" cy="294" r="8"/>
+  </g>
+  <circle cx="1068" cy="111" r="7" fill="#FF8101"/><circle cx="1168" cy="226" r="8" fill="#FF8101"/><circle cx="1290" cy="119" r="6" fill="#FFB454"/>
+  <text x="72" y="116" font-family="Inter,Arial,sans-serif" font-size="72" font-weight="750" letter-spacing="-2" fill="#F8FAFC">Graph<tspan fill="url(#accent)">Triage</tspan></text>
+  <text x="76" y="168" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="600" fill="#DCE7F0">Graph-grounded incident resolution</text>
+  <text x="76" y="204" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="600" fill="#DCE7F0">and temporal memory</text>
+  <text x="76" y="244" font-family="Inter,Arial,sans-serif" font-size="19" fill="#AFC3D4">Trace failures. Assess impact. Preserve what was learned.</text>
+  <g font-family="Inter,Arial,sans-serif" font-size="15" font-weight="600">
+    <rect x="76" y="315" width="148" height="30" rx="15" fill="#142D40" stroke="#42627A"/><text x="150" y="335" text-anchor="middle" fill="#F8FAFC">FalkorDB</text>
+    <rect x="236" y="315" width="126" height="30" rx="15" fill="#142D40" stroke="#42627A"/><text x="299" y="335" text-anchor="middle" fill="#F8FAFC">Python</text>
+    <rect x="374" y="315" width="164" height="30" rx="15" fill="#142D40" stroke="#42627A"/><text x="456" y="335" text-anchor="middle" fill="#F8FAFC">Multi-agent</text>
+    <rect x="550" y="315" width="174" height="30" rx="15" fill="#142D40" stroke="#42627A"/><text x="637" y="335" text-anchor="middle" fill="#F8FAFC">Temporal memory</text>
+  </g>
+</svg>
