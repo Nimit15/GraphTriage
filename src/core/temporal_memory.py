@@ -19,8 +19,9 @@ from falkordb import FalkorDB
 import logging
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file, unless disabled
+if os.getenv("PYTHON_DOTENV_DISABLED") != "1":
+    load_dotenv(override=False)
 
 logger = logging.getLogger(__name__)
 class TemporalMemory:
@@ -565,7 +566,10 @@ class WorkspaceManager:
             found = len(result.result_set) > 0 if result.result_set else False
 
             # Clean up
-            graph_a.query("MATCH (n {id: $id}) DETACH DELETE n", {"id": test_id})
+            try:
+                graph_a.query("MATCH (n {id: $id}) DETACH DELETE n", {"id": test_id})
+            except Exception:
+                pass
 
             return not found  # Isolation works if NOT found in other workspace
 

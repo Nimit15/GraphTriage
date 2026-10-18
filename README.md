@@ -1,17 +1,6 @@
 # GraphTriage FalkorDB - Graph-Based Incident Resolver
 
-> **Graph Hacks 2026 • Track 1 + Track 2 Implementation**
-> **Primary Database:** FalkorDB (Redis-backed graph database) - *no substitutes*
-
-![GraphTriage Hero](hero-banner.svg)
-
-Build RepoGraph Investigator for WeMakeDevs Graph Hacks 2026 with:
-
-- **Track 1**: Closed-loop incident resolver with graph-based fault tracing
-- **Track 2**: Three-tier temporal memory with superseded facts and multi-agent handoffs
-- **Requirement**: FalkorDB must be the actual primary graph database (no alternatives)
-
-AI-powered engineering agent for tracing software dependencies and identifying code-change impact using FalkorDB.
+An AI engineering agent for tracing software dependencies and identifying code-change impact using FalkorDB.
 
 **Built for:** WeMakeDevs Graph Hacks 2026  
 **Track:** Track 1 (Agents That Act on Connected Data) + Track 2 (Agent Memory and Coordination)
@@ -200,3 +189,11 @@ python -m pytest tests/ -v
 ## License
 
 MIT - Hackathon Project 2026
+
+![GraphTriage Hero](hero-banner.svg)
+
+![System Architecture](architecture-flow.svg)
+
+![Temporal Memory Lifecycle](temporal-memory-lifecycle.svg)
+
+![Performance Benchmarks](benchmark-chart.svg)

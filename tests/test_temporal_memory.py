@@ -46,6 +46,12 @@ def temporal_memory():
                 memory.graph.query("MATCH (n) DETACH DELETE n")
             except Exception:
                 pass
+        finally:
+            # Close the connection factory to release resources
+            try:
+                client.close()
+            except Exception:
+                pass
         memory.close()
     except Exception as e:
         pytest.skip(f"FalkorDB not available: {e}")
