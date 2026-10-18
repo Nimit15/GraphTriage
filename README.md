@@ -5,6 +5,8 @@ An AI engineering agent for tracing software dependencies and identifying code-c
 **Built for:** WeMakeDevs Graph Hacks 2026  
 **Track:** Track 1 (Agents That Act on Connected Data) + Track 2 (Agent Memory and Coordination)
 
+(hero-banner.png)
+
 ## What It Does
 
 RepoGraph Investigator answers engineering questions like:
