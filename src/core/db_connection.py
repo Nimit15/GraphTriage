@@ -159,9 +159,13 @@ def get_falkordb_client() -> FalkorDB:
         logger.error("FALKORDB_HOST and FALKORDB_PORT must be set and valid")
         raise ConnectionError("FALKORDB_HOST and FALKORDB_PORT must be set and valid in environment variables")
 
-    # Get authentication credentials
+    # Get authentication credentials - treat empty strings as None
     username = os.getenv("FALKORDB_USERNAME")
     password = os.getenv("FALKORDB_PASSWORD")
+    if username == "":
+        username = None
+    if password == "":
+        password = None
 
     # Determine SSL configuration
     ssl_env = os.getenv("FALKORDB_SSL", "false").lower()
@@ -196,6 +200,25 @@ def get_falkordb_client() -> FalkorDB:
 
     except Exception as e:
         logger.warning(f"Initial connection attempt failed: {e}")
+
+        # If connecting to localhost/127.0.0.1 and getting auth error, retry without credentials
+        if host in ("localhost", "127.0.0.1") and "invalid username-password pair" in str(e).lower():
+            logger.info("Localhost auth failed, retrying without credentials...")
+            try:
+                retry_params = {"host": host, "port": port}
+                if ssl:
+                    retry_params["ssl"] = True
+                client = FalkorDB(**retry_params)
+
+                # Test connection with a simple query
+                test_graph = client.select_graph("graphtriage_test")
+                test_graph.query("RETURN 1 as test")
+
+                logger.info("Successfully connected to FalkorDB without credentials")
+                return client
+            except Exception as retry_e:
+                logger.warning(f"Retry without credentials also failed: {retry_e}")
+                # Fall through to original error handling
 
         # If SSL was configured, try without SSL as fallback
         if ssl:

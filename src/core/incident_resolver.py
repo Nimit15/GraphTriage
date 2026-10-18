@@ -110,8 +110,8 @@ class IncidentResolver:
             "CREATE INDEX FOR (i:Incident) ON (i.id)",
 
             # Create constraint for uniqueness
-            "CREATE CONSTRAINT FOR (f:Function) REQUIRE f.name IS UNIQUE IF NOT EXISTS",
-            "CREATE CONSTRAINT FOR (m:Module) REQUIRE m.path IS UNIQUE IF NOT EXISTS",
+            "CREATE CONSTRAINT FOR (f:Function) REQUIRE f.name IS UNIQUE",
+            "CREATE CONSTRAINT FOR (m:Module) REQUIRE m.path IS UNIQUE",
         ]
 
         for query in schema_queries:

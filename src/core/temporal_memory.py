@@ -95,10 +95,10 @@ class TemporalMemory:
             "CREATE INDEX FOR (p:ProceduralPlaybook) ON (p.fault_signature)",
             "CREATE INDEX FOR (p:ProceduralPlaybook) ON (p.workspace_id)",
 
-            # Constraints
-            "CREATE CONSTRAINT FOR (e:EpisodicIncident) REQUIRE e.id IS UNIQUE IF NOT EXISTS",
-            "CREATE CONSTRAINT FOR (f:SemanticFact) REQUIRE f.id IS UNIQUE IF NOT EXISTS",
-            "CREATE CONSTRAINT FOR (p:ProceduralPlaybook) REQUIRE p.id IS UNIQUE IF NOT EXISTS",
+            # Constraints - try without IF NOT EXISTS first, handle errors gracefully
+            "CREATE CONSTRAINT FOR (e:EpisodicIncident) REQUIRE e.id IS UNIQUE",
+            "CREATE CONSTRAINT FOR (f:SemanticFact) REQUIRE f.id IS UNIQUE",
+            "CREATE CONSTRAINT FOR (p:ProceduralPlaybook) REQUIRE p.id IS UNIQUE",
         ]
 
         for query in schema_queries:
