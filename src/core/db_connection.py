@@ -29,7 +29,6 @@ def _parse_endpoint(host: str, port: Any) -> Tuple[str, int]:
     Returns:
         Tuple of (host, port) with normalized values
     """
-    original_host = host
     # Handle protocol prefixes
     if host.startswith(("http://", "https://", "redis://", "rediss://")):
         # Strip protocol prefix if present
@@ -50,13 +49,54 @@ def _parse_endpoint(host: str, port: Any) -> Tuple[str, int]:
 
     return host, port
 
+def _try_cloud_connection() -> Optional[FalkorDB]:
+    """Try to connect to FalkorDB Cloud using credentials from .env.
+
+    Returns:
+        FalkorDB client if successful, None otherwise.
+    """
+    cloud_host = os.getenv("FALKORDB_HOST", "")
+
+    # Check for cloud host patterns
+    if "falkordb.cloud" not in cloud_host and ".instance" not in cloud_host:
+        return None
+
+    logger.info(f"Found FalkorDB Cloud credentials: host={cloud_host}, port={os.getenv('FALKORDB_PORT')}")
+
+    conn_params = {
+        "host": cloud_host,
+        "port": int(os.getenv("FALKORDB_PORT", "57210")),
+    }
+
+    # Add authentication if available
+    username = os.getenv("FALKORDB_USERNAME")
+    password = os.getenv("FALKORDB_PASSWORD")
+    if username and password:
+        conn_params["username"] = username
+        conn_params["password"] = password
+
+    # Add SSL if configured
+    ssl_env = os.getenv("FALKORDB_SSL", "false").lower()
+    if ssl_env in ("true", "1", "yes"):
+        conn_params["ssl"] = True
+
+    try:
+        client = FalkorDB(**conn_params)
+        test_graph = client.select_graph("graphtriage_test")
+        test_graph.query("RETURN 1 as test")
+        logger.info(f"Successfully connected to FalkorDB cloud at {cloud_host}:{os.getenv('FALKORDB_PORT')}")
+        return client
+    except Exception as e:
+        logger.error(f"FalkorDB Cloud connection failed: {e}")
+        return None
+
 def get_falkordb_client() -> FalkorDB:
     """Get a FalkorDB client with cloud credentials support and intelligent fallback.
 
     This function implements a smart connection strategy:
-    1. First tries to use FALKORDB_URL for direct connection
-    2. Falls back to FALKORDB_HOST/FALKORDB_PORT with intelligent parsing
-    3. Supports both cloud and local deployments with automatic fallback behavior
+    1. First tries cloud credentials if detected
+    2. Tries FALKORDB_URL for direct connection
+    3. Falls back to FALKORDB_HOST/FALKORDB_PORT with intelligent parsing
 
     Returns:
         Configured FalkorDB client instance
@@ -64,88 +104,27 @@ def get_falkordb_client() -> FalkorDB:
     Raises:
         ConnectionError: If unable to connect after all fallback attempts
     """
-    # Debug: Check what's in environment variables
-    logger.info(f"FALKORDB_HOST: {os.getenv('FALKORDB_HOST')}")
-    logger.info(f"FALKORDB_PORT: {os.getenv('FALKORDB_PORT')}")
-    logger.info(f"FALKORDB_URL: {os.getenv('FALKORDB_URL')}")
-    logger.info(f"FALKORDB_USERNAME: {'***' if os.getenv('FALKORDB_USERNAME') else 'None'}")
-    logger.info(f"FALKORDB_PASSWORD: {'***' if os.getenv('FALKORDB_PASSWORD') else 'None'}")
-
-    # Use cloud credentials from .env if available
-    logger.info(f"Checking for FalkorDB cloud credentials in .env")
-
-    # Check if we have the correct cloud host from .env
-    cloud_host = os.getenv("FALKORDB_HOST", "")
-    logger.info(f"Cloud host: {cloud_host}")
-    # Check for cloud host patterns (falkordb.cloud or instance pattern)
-    if "falkordb.cloud" in cloud_host or ".instance" in cloud_host:
-        logger.info(f"Found FalkorDB Cloud credentials: host={os.getenv('FALKORDB_HOST')}, port={os.getenv('FALKORDB_PORT')}")
-
-        # Create connection parameters for cloud
-        logger.info(f"Cloud host: {cloud_host}")
-        logger.info(f"Cloud port: {os.getenv('FALKORDB_PORT')}")
-        conn_params = {
-            "host": cloud_host,
-            "port": int(os.getenv("FALKORDB_PORT", "57210")),
-        }
-
-        # Add authentication if available
-        username = os.getenv("FALKORDB_USERNAME")
-        password = os.getenv("FALKORDB_PASSWORD")
-        if username and password:
-            conn_params["username"] = username
-            conn_params["password"] = password
-
-        # Add SSL if configured
-        ssl_env = os.getenv("FALKORDB_SSL", "false").lower()
-        ssl = ssl_env in ("true", "1", "yes")
-        if ssl:
-            conn_params["ssl"] = True
-
-        try:
-            # Test connection with cloud credentials
-            logger.info(f"Attempting to connect to FalkorDB cloud: {cloud_host}:{os.getenv('FALKORDB_PORT')}")
-            client = FalkorDB(**conn_params)
-
-            # Test connection with a simple query
-            test_graph = client.select_graph("graphtriage_test")
-            test_graph.query("RETURN 1 as test")
-
-            logger.info(f"Successfully connected to FalkorDB cloud at {cloud_host}:{os.getenv('FALKORDB_PORT')}")
-            return client
-
-        except Exception as e:
-            logger.error(f"FalkorDB Cloud connection failed: {e}")
-            logger.info("Falling back to localhost connection")
+    # Try cloud connection first if credentials are detected
+    cloud_client = _try_cloud_connection()
+    if cloud_client:
+        return cloud_client
 
     # Try FALKORDB_URL first (direct connection string)
     falkordb_url = os.getenv("FALKORDB_URL")
     if falkordb_url:
-        logger.info(f"Using FalkorDB URL: {falkordb_url.replace(os.getenv('FALKORDB_PASSWORD', ''), '***')}")
+        logger.info(f"Using FalkorDB URL")
         try:
-            # Parse URL for authentication and endpoint
             from urllib.parse import urlparse
             parsed = urlparse(falkordb_url)
 
-            # Extract connection parameters
             username = parsed.username or os.getenv("FALKORDB_USERNAME")
             password = parsed.password or os.getenv("FALKORDB_PASSWORD")
-
-            # Parse host from URL (handle different URL formats)
             host = parsed.hostname or os.getenv("FALKORDB_HOST", "localhost")
             port = parsed.port or int(os.getenv("FALKORDB_PORT", "6379"))
+            ssl = parsed.scheme in ("rediss", "https", "wss")
 
-            # Determine SSL based on URL scheme
-            ssl = parsed.scheme in ("rediss", "https", "wss") or \
-                  os.getenv("FALKORDB_SSL", "false").lower() in ("true", "1", "yes")
-
-            # Create client with URL parameters
             if username and password:
-                client = FalkorDB.from_url(
-                    falkordb_url,
-                    username=username,
-                    password=password
-                )
+                client = FalkorDB.from_url(falkordb_url, username=username, password=password)
             else:
                 client = FalkorDB.from_url(falkordb_url)
 
@@ -238,6 +217,7 @@ def get_falkordb_client() -> FalkorDB:
                 f"Error: {e}. "
                 f"Please check your FalkorDB credentials and network connectivity."
             )
+
 def test_connection() -> dict:
     """Test connection to FalkorDB and return connection details.
 
@@ -278,6 +258,7 @@ def test_connection() -> dict:
             "run_time_ms": None,
             "message": "Failed to connect to FalkorDB cloud"
         }
+
 if __name__ == "__main__":
     # Quick test when run directly
     import logging

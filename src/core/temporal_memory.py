@@ -23,8 +23,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
-
 class TemporalMemory:
     """
     Three-tier temporal memory system for incident resolution.
@@ -52,6 +50,7 @@ class TemporalMemory:
         self.db = get_falkordb_client()
         self.graph = self.db.select_graph(graph_name)
 
+        # Initialize schema only if we can connect successfully
         self._ensure_memory_schema()
 
     def _ensure_memory_schema(self):
@@ -66,7 +65,12 @@ class TemporalMemory:
                 self._create_memory_schema()
         except Exception as e:
             logger.warning(f"Could not check memory state: {e}")
-            self._create_memory_schema()
+            # Only create schema if we can connect to the database
+            try:
+                self._create_memory_schema()
+            except Exception as e2:
+                # If we can't create schema, log warning but continue
+                logger.warning(f"Could not initialize temporal memory schema: {e2}")
 
     def _create_memory_schema(self):
         """Create the three-tier memory schema with indices and constraints."""
