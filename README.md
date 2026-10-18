@@ -189,11 +189,3 @@ python -m pytest tests/ -v
 ## License
 
 MIT - Hackathon Project 2026
-
-![GraphTriage Hero](hero-banner.svg)
-
-![System Architecture](architecture-flow.svg)
-
-![Temporal Memory Lifecycle](temporal-memory-lifecycle.svg)
-
-![Performance Benchmarks](benchmark-chart.svg)
