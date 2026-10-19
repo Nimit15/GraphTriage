@@ -20,12 +20,8 @@ class IncidentResolver:
         Initialize the incident resolver.
 
         Args:
-            host: FalkorDB host (defaults to FALKORDB_HOST env var or localhost)
-            port: FalkorDB port (defaults to FALKORDB_PORT env var or 6379)
-            graph_name: Name of the graph to use
-            username: FalkorDB username (defaults to FALKORDB_USERNAME env var)
-            password: FalkorDB password (defaults to FALKORDB_PASSWORD env var)
-            ssl: Use SSL connection (defaults to FALKORDB_SSL env var)
+            graph_name: Graph to use. If omitted, GRAPH_NAME is used,
+                falling back to "graphtriage".
         """
         # Use connection factory for central connection management
         from .db_connection import get_falkordb_client
@@ -130,8 +126,14 @@ class IncidentResolver:
         """
         logger.info("Ingesting sandbox service into FalkorDB graph")
 
-        # Clear existing data for fresh ingest (in production, this would be incremental)
-        self.graph.query("MATCH (n) DETACH DELETE n")
+        # Replace only the sandbox code inventory. Leave incident-memory nodes alone.
+        self.graph.query(
+            """
+            MATCH (n)
+            WHERE n:Module OR n:Function OR n:Test
+            DETACH DELETE n
+            """
+        )
 
         # Modules
         modules = [
@@ -332,7 +334,7 @@ class IncidentResolver:
             # Calculate blast radius
             blast_radius = self.calculate_blast_radius(function_name)
 
-            # Trace failure path if test is provided - use optimized FalkorDB native query
+            # Trace the test through stored coverage and call relationships.
             failure_path = []
             if test_name:
                 failure_path = self.trace_failure_path_native(test_name)
@@ -368,9 +370,10 @@ class IncidentResolver:
 
     def trace_failure_path_native(self, test_name: str, max_hops: int = 6) -> List[Dict[str, Any]]:
         """
-        Use FalkorDB native Cypher for multi-hop path tracing (Rule #4 Compliance).
+        Trace the covered function and any stored CALLS links.
 
-        This leverages FalkorDB's graph capabilities instead of Python loops.
+        Despite this method's legacy name, the current implementation performs
+        one graph query per hop rather than a single native multi-hop query.
 
         Args:
             test_name: Name of the failing test
@@ -939,7 +942,7 @@ def create_incident_resolver(host: str = None, port: int = None,
 
 if __name__ == "__main__":
     # Demo usage
-    resolver = IncidentResolver()
+    resolver = IncidentResolver(graph_name="graphtriage_cli_demo")
 
     # Ingest the sandbox service
     resolver.ingest_sandbox_service()

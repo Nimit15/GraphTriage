@@ -1,6 +1,7 @@
 """Tests for temporal memory and multi-agent pipeline."""
 import pytest
 import time
+import uuid
 from src.core.temporal_memory import TemporalMemory, WorkspaceManager
 from src.core.multi_agent_pipeline import (
     MultiAgentPipeline,
@@ -11,50 +12,28 @@ from src.core.multi_agent_pipeline import (
 )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def workspace_manager():
-    """Create workspace manager for isolation tests."""
+    """Create a workspace manager for isolation tests."""
+    manager = WorkspaceManager()
     try:
-        manager = WorkspaceManager()
         yield manager
+    finally:
         manager.close()
-    except Exception as e:
-        pytest.skip(f"FalkorDB not available: {e}")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def temporal_memory():
-    """Create temporal memory instance with fresh graph for each test."""
-    import uuid
-    graph_name = f"repograph_test_memory_{uuid.uuid4().hex[:8]}"
+    """Create a disposable graph for each temporal-memory test."""
+    graph_name = f"graphtriage_test_memory_{uuid.uuid4().hex[:10]}"
+    memory = TemporalMemory(graph_name=graph_name)
     try:
-        memory = TemporalMemory(graph_name=graph_name)
         yield memory
-        # Clean up the graph after test
+    finally:
         try:
-            # Try to delete the graph directly if possible
-            # Use the connection factory to get the client and select_graph
-            from src.core.db_connection import get_falkordb_client
-            client = get_falkordb_client()
-            # Select the graph to delete it
-            graph = client.select_graph(graph_name)
-            # Use the supported FalkorDB Python graph-deletion API for only the exact disposable graph created by that fixture
-            graph.query("CALL db.dropGraph($graph_name)", {"graph_name": graph_name})
-        except Exception as e:
-            # If graph deletion fails, at least delete all nodes in the graph
-            try:
-                memory.graph.query("MATCH (n) DETACH DELETE n")
-            except Exception:
-                pass
+            memory.graph.delete()
         finally:
-            # Close the connection factory to release resources
-            try:
-                client.close()
-            except Exception:
-                pass
-        memory.close()
-    except Exception as e:
-        pytest.skip(f"FalkorDB not available: {e}")
+            memory.close()
 
 
 class TestTemporalMemory:
@@ -167,21 +146,24 @@ class TestWorkspaceIsolation:
 
     def test_workspace_isolation(self, workspace_manager):
         """Test that workspace_alpha facts are unreachable from workspace_beta."""
-        ws_alpha = "workspace_alpha"
-        ws_beta = "workspace_beta"
-
-        # Verify isolation works
-        is_isolated = workspace_manager.verify_isolation(ws_alpha, ws_beta)
-        assert is_isolated, "Workspace isolation failed - data leaked between workspaces"
+        ws_alpha = f"workspace_alpha_{uuid.uuid4().hex[:8]}"
+        ws_beta = f"workspace_beta_{uuid.uuid4().hex[:8]}"
+        try:
+            is_isolated = workspace_manager.verify_isolation(ws_alpha, ws_beta)
+            assert is_isolated, "Workspace isolation failed - data leaked between workspaces"
+        finally:
+            workspace_manager.get_workspace_graph(ws_alpha).delete()
+            workspace_manager.get_workspace_graph(ws_beta).delete()
 
     def test_get_workspace_graph(self, workspace_manager):
         """Test getting workspace-specific graph."""
-        ws_id = "test_isolation_ws"
+        ws_id = f"test_isolation_ws_{uuid.uuid4().hex[:8]}"
         graph = workspace_manager.get_workspace_graph(ws_id)
-
-        # Should be able to query the graph
-        result = graph.query("MATCH (n) RETURN count(n) as count")
-        assert result.result_set is not None
+        try:
+            result = graph.query("MATCH (n) RETURN count(n) as count")
+            assert result.result_set is not None
+        finally:
+            graph.delete()
 
 
 class TestMultiAgentPipeline:
@@ -189,39 +171,39 @@ class TestMultiAgentPipeline:
 
     @pytest.fixture
     def pipeline(self):
-        """Create pipeline instance with data ingested."""
+        """Create a pipeline with data in a unique graph."""
+        workspace_id = f"pipeline_test_{uuid.uuid4().hex[:8]}"
+        instance = MultiAgentPipeline(workspace_id=workspace_id)
         try:
-            import uuid
-            ws_id = f"pipeline_test_{uuid.uuid4().hex[:8]}"
-            p = MultiAgentPipeline(workspace_id=ws_id)
-            # Ingest sandbox service data for this workspace
+            instance.blast_radius_agent.resolver.ingest_sandbox_service()
+            yield instance
+        finally:
             try:
-                p.triage_agent.memory.graph.query("MATCH (n) DETACH DELETE n")
-                p.blast_radius_agent.resolver.ingest_sandbox_service()
-            except Exception:
-                # If cleanup or ingestion fails, continue with the pipeline
-                # The pipeline should still work even if cleanup fails
-                pass
-            yield p
-        except Exception as e:
-            pytest.skip(f"Pipeline setup failed: {e}")
+                instance.blast_radius_agent.resolver.graph.delete()
+            finally:
+                instance.triage_agent.memory.close()
+                instance.blast_radius_agent.resolver.close()
+                instance.memory_curator_agent.memory.close()
 
     def test_triage_agent_extract_signature(self):
         """Test TriageAgent fault signature extraction."""
+        workspace_id = f"triage_signature_{uuid.uuid4().hex[:8]}"
+        agent = TriageAgent(workspace_id=workspace_id)
         try:
-            agent = TriageAgent(workspace_id="test")
-        except Exception:
-            pytest.skip("FalkorDB not available")
-
-        stack_trace = """
+            stack_trace = """
 Traceback (most recent call last):
   File "app.py", line 14, in process_user_data
     total_income += user['income']
 KeyError: 'income'
 """
-        signature = agent._extract_fault_signature(stack_trace)
-        assert "KeyError" in signature
-        assert "income" in signature
+            signature = agent._extract_fault_signature(stack_trace)
+            assert "KeyError" in signature
+            assert "income" in signature
+        finally:
+            try:
+                agent.memory.graph.delete()
+            finally:
+                agent.memory.close()
 
     def test_full_pipeline(self, pipeline):
         """Test complete three-agent handoff pipeline."""

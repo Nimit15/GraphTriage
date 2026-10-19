@@ -16,7 +16,7 @@ from falkordb import FalkorDB
 logger = logging.getLogger(__name__)
 
 # Load environment variables from project root .env file, unless disabled
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if os.getenv("PYTHON_DOTENV_DISABLED") != "1":
     load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=False)
 
@@ -139,13 +139,8 @@ def get_falkordb_client() -> FalkorDB:
     # Fallback to FALKORDB_HOST/FALKORDB_PORT configuration
     falkordb_host = os.getenv("FALKORDB_HOST", "localhost")
 
-    # Check if PYTHON_DOTENV_DISABLED is set and if so, don't default to .env values
-    if os.getenv("PYTHON_DOTENV_DISABLED") != "1":
-        # Try to get port from environment, fall back to 6380 (local Docker) then 6379
-        falkordb_port = os.getenv("FALKORDB_PORT", "6380")
-    else:
-        # If .env is disabled, always use 6379 as the default
-        falkordb_port = os.getenv("FALKORDB_PORT", "6379")
+    # FalkorDB uses port 6379 by default; deployments can override it.
+    falkordb_port = os.getenv("FALKORDB_PORT", "6379")
 
     # Parse and normalize endpoint
     try:
@@ -250,45 +245,53 @@ def get_falkordb_client() -> FalkorDB:
             )
 
 def test_connection() -> dict:
-    """Test connection to FalkorDB and return connection details.
-
-    Returns:
-        Dictionary with connection status and metrics
-    """
+    """Test a connection with a temporary graph and clean up afterward."""
     import time
+    import uuid
 
-    start_time = time.time()
+    start_time = time.perf_counter()
+    client = None
+    graph = None
     try:
         client = get_falkordb_client()
-        test_graph = client.select_graph("graphtriage_smoketest")
-
-        # Test write operation
-        test_graph.query("CREATE (t:TestNode {id: 'test', timestamp: $now}) RETURN t",
-                        {"now": time.time()})
-
-        # Test read operation
-        result = test_graph.query("MATCH (t:TestNode) RETURN t.id as id")
-
-        # Cleanup
-        test_graph.query("MATCH (t:TestNode {id: 'test'}) DELETE t")
-
-        end_time = time.time()
-        run_time_ms = (end_time - start_time) * 1000
+        graph_name = f"graphtriage_smoketest_{uuid.uuid4().hex[:8]}"
+        graph = client.select_graph(graph_name)
+        test_id = uuid.uuid4().hex
+        graph.query(
+            "CREATE (t:ConnectionCheck {id: $id, timestamp: $now})",
+            {"id": test_id, "now": time.time()},
+        )
+        result = graph.query(
+            "MATCH (t:ConnectionCheck {id: $id}) RETURN t.id",
+            {"id": test_id},
+        )
+        if not result.result_set or result.result_set[0][0] != test_id:
+            raise RuntimeError("The read-after-write check did not return the created record.")
 
         return {
             "status": "success",
-            "connection_string": f"{client.host}:{client.port}",
-            "run_time_ms": round(run_time_ms, 2),
-            "message": "Successfully connected to FalkorDB cloud"
+            "connection_target": (
+                f"{os.getenv('FALKORDB_HOST', 'localhost')}:"
+                f"{os.getenv('FALKORDB_PORT', '6379')}"
+            ),
+            "run_time_ms": round((time.perf_counter() - start_time) * 1000, 2),
+            "message": "Connected to FalkorDB and completed a read-after-write check.",
         }
-
-    except Exception as e:
+    except Exception as exc:
         return {
             "status": "failed",
-            "error": str(e),
+            "error": str(exc),
             "run_time_ms": None,
-            "message": "Failed to connect to FalkorDB cloud"
+            "message": "FalkorDB connection or read-after-write check failed.",
         }
+    finally:
+        if graph is not None:
+            try:
+                graph.delete()
+            except Exception:
+                logger.exception("Could not delete temporary connection-check graph.")
+        if client is not None:
+            client.close()
 
 if __name__ == "__main__":
     # Quick test when run directly
@@ -301,10 +304,10 @@ if __name__ == "__main__":
     result = test_connection()
 
     if result["status"] == "success":
-        print(f"✅ {result['message']}")
+        print(f"[OK] {result['message']}")
         print(f"   Connection: {result['connection_string']}")
         print(f"   Response time: {result['run_time_ms']}ms")
     else:
-        print(f"❌ {result['message']}")
+        print(f"[ERROR] {result['message']}")
         print(f"   Error: {result['error']}")
         exit(1)

@@ -1,5 +1,5 @@
 """
-Temporal Memory System for RepoGraph FalkorDB.
+Temporal Memory System for GraphTriage.
 
 Implements three-tier graph memory schema:
 1. EpisodicIncident - session ID, stack trace, failing test, timestamp
@@ -13,15 +13,11 @@ import os
 import json
 import hashlib
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from falkordb import FalkorDB
 import logging
-from dotenv import load_dotenv
-
-# Load environment variables from .env file, unless disabled
-if os.getenv("PYTHON_DOTENV_DISABLED") != "1":
-    load_dotenv(override=False)
 
 logger = logging.getLogger(__name__)
 class TemporalMemory:
@@ -585,7 +581,7 @@ class WorkspaceManager:
 
 if __name__ == "__main__":
     # Demo usage
-    memory = TemporalMemory()
+    memory = TemporalMemory(graph_name=f"graphtriage_cli_memory_demo_{uuid.uuid4().hex[:8]}")
 
     # Record an incident
     incident_id = memory.record_incident({
@@ -638,4 +634,5 @@ if __name__ == "__main__":
             for s in f['superseded_by']:
                 print(f"    SUPERSEDED by: {s['statement']}")
 
+    memory.graph.delete()
     memory.close()

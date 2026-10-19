@@ -1,12 +1,12 @@
 """
-MCP Server for RepoGraph FalkorDB Incident Resolver.
+MCP server for GraphTriage.
 
 Exposes three tools:
 1. trace_blast_radius - Trace failure path and calculate blast radius
 2. find_failure_path - Find the exact fault propagation chain
 3. run_targeted_tests - Execute targeted pytest tests
 
-Uses the official MCP SDK / FastMCP pattern.
+Uses the Python MCP SDK over standard input/output.
 """
 import asyncio
 import json
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class RepoGraphMCPServer:
     """
-    MCP Server for RepoGraph FalkorDB incident resolution.
+    MCP server for GraphTriage.
     Provides tools for fault tracing, blast radius analysis, and targeted testing.
     """
 
@@ -42,98 +42,107 @@ class RepoGraphMCPServer:
         self._ensure_data_ingested()
 
     def _ensure_data_ingested(self):
-        """Ensure sandbox service data is ingested into FalkorDB."""
+        """Seed the sandbox only when the selected graph is empty.
+
+        Do not clear an existing graph just because it has no nodes labeled
+        as failing tests; it may contain user-managed graph data.
+        """
         try:
-            # Check if we have data
             failing_tests = self.resolver.get_failing_tests()
-            if not failing_tests:
-                logger.info("Ingesting sandbox service data into graph")
+            if failing_tests:
+                return
+
+            count_result = self.resolver.graph.query("MATCH (n) RETURN count(n)")
+            node_count = count_result.result_set[0][0] if count_result.result_set else 0
+            if node_count == 0:
+                logger.info("The selected graph is empty; seeding sandbox metadata")
                 self.resolver.ingest_sandbox_service()
-        except Exception as e:
-            logger.warning(f"Could not ensure data ingested: {e}")
-            try:
-                self.resolver.ingest_sandbox_service()
-            except Exception as e2:
-                logger.error(f"Failed to ingest data: {e2}")
+            else:
+                logger.info(
+                    "The selected graph already contains data; leaving it untouched "
+                    "because no failing-test records were found."
+                )
+        except Exception:
+            logger.exception("Could not verify the graph before sandbox seeding; leaving it untouched.")
 
     async def trace_blast_radius(self, arguments: Dict[str, Any]) -> List[Any]:
-        """
-        Trace the blast radius of a function change.
-        Returns affected functions ranked by impact score.
-        """
+        """Return graph-supported impact for a function name."""
         function_name = arguments.get("function_name", "")
         max_hops = arguments.get("max_hops", 6)
-
         if not function_name:
-            return [TextContent(type="text",
-                                text="Error: function_name is required")]
+            return [TextContent(type="text", text="Error: function_name is required")]
 
         try:
-            # First trace failure path if function is connected to tests
-            path = self.resolver.trace_failure_path(function_name, max_hops=max_hops)
+            analysis = self.resolver.analyze_impact(function_name)
+            if analysis.get("status") != "COMPLETED":
+                return [TextContent(type="text", text=json.dumps(analysis, indent=2))]
 
-            # Calculate blast radius
-            blast_radius = self.resolver.calculate_blast_radius(function_name)
+            # trace_failure_path expects a failing test name, not a function name.
+            test_result = self.resolver.graph.query(
+                """
+                MATCH (t:Test {status: 'failing'})-[:COVERS]->(f:Function {name: $function_name})
+                RETURN t.name
+                LIMIT 1
+                """,
+                {"function_name": function_name},
+            )
+            if not test_result.result_set:
+                test_result = self.resolver.graph.query(
+                    """
+                    MATCH (t:Test)-[:COVERS]->(f:Function {name: $function_name})
+                    RETURN t.name
+                    LIMIT 1
+                    """,
+                    {"function_name": function_name},
+                )
+
+            path = []
+            if test_result.result_set:
+                path = self.resolver.trace_failure_path(
+                    test_result.result_set[0][0], max_hops=max_hops
+                )
 
             response = {
                 "function_name": function_name,
-                "failure_path": path[:1] if path else [],  # Top path
-                "blast_radius": blast_radius[:10],  # Top 10 affected functions
-                "affected_count": len(blast_radius),
-                "status": "completed"
+                "failure_path": path,
+                "blast_radius": analysis.get("blast_radius", [])[:10],
+                "affected_count": len(analysis.get("blast_radius", [])),
+                "status": "completed",
             }
-
             return [TextContent(type="text", text=json.dumps(response, indent=2))]
-
         except Exception as e:
-            logger.error(f"Error in trace_blast_radius: {e}")
-            return [TextContent(type="text",
-                                text=json.dumps({"error": str(e), "status": "failed"}))]
+            logger.error("Error in trace_blast_radius: %s", e)
+            return [TextContent(type="text", text=json.dumps({"error": str(e), "status": "failed"}))]
 
     async def find_failure_path(self, arguments: Dict[str, Any]) -> List[Any]:
-        """
-        Find the exact failure propagation chain from a failing test to root cause.
-        Uses shortestPath Cypher query through FalkorDB.
-        """
+        """Trace a failing test through the relationships currently stored in the graph."""
         test_name = arguments.get("test_name", "")
         max_hops = arguments.get("max_hops", 6)
-
         if not test_name:
-            return [TextContent(type="text",
-                                text="Error: test_name is required")]
+            return [TextContent(type="text", text="Error: test_name is required")]
 
         try:
             path = self.resolver.trace_failure_path(test_name, max_hops=max_hops)
-
             if not path:
                 response = {
                     "test_name": test_name,
-                    "failure_path": None,
-                    "message": f"No failure path found for test: {test_name}",
-                    "status": "not_found"
+                    "failure_path": [],
+                    "path_length": 0,
+                    "message": f"No graph path found for test: {test_name}",
+                    "status": "not_found",
                 }
-                return [TextContent(type="text", text=json.dumps(response, indent=2))]
-
-            path_data = path[0]
-
-            # Get the root cause function
-            nodes = path_data.get("nodes", [])
-            root_cause = nodes[-1] if nodes else None  # Last node in shortest path is root cause
-
-            response = {
-                "test_name": test_name,
-                "failure_path": path_data,
-                "root_cause": root_cause,
-                "path_length": path_data.get("path_length", 0),
-                "status": "found"
-            }
-
+            else:
+                response = {
+                    "test_name": test_name,
+                    "failure_path": path,
+                    "root_cause": path[-1].get("node"),
+                    "path_length": len(path),
+                    "status": "found",
+                }
             return [TextContent(type="text", text=json.dumps(response, indent=2))]
-
         except Exception as e:
-            logger.error(f"Error in find_failure_path: {e}")
-            return [TextContent(type="text",
-                                text=json.dumps({"error": str(e), "status": "failed"}))]
+            logger.error("Error in find_failure_path: %s", e)
+            return [TextContent(type="text", text=json.dumps({"error": str(e), "status": "failed"}))]
 
     async def run_targeted_tests(self, arguments: Dict[str, Any]) -> List[Any]:
         """
@@ -270,9 +279,11 @@ def main():
 
         async def run():
             async with stdio_server() as (read_stream, write_stream):
-                # Use initialization_options as required by newer MCP SDK
-                from mcp.server.models import InitializationOptions
-                await mcp_server.run(read_stream, write_stream, InitializationOptions())
+                await mcp_server.run(
+                    read_stream,
+                    write_stream,
+                    mcp_server.create_initialization_options(),
+                )
 
         asyncio.run(run())
     else:

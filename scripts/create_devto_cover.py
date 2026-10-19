@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create a 1000x420 PNG cover image for DEV.to post.
+Create the DEV.to cover image at docs/assets/devto_cover.png.
 Design: Dark slate background with connected graph illustration and centered text.
 """
 
@@ -190,7 +190,8 @@ def create_devto_cover():
                     ], fill=light_gray, width=1)
 
     # Save the image
-    output_path = os.path.join(os.path.dirname(__file__), 'devto_cover.png')
+    output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'docs', 'assets', 'devto_cover.png'))
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     image.save(output_path, 'PNG')
     print(f"Cover image saved to: {output_path}")
     print(f"Dimensions: {image.size}")

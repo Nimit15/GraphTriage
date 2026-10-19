@@ -9,6 +9,7 @@ Three-stage handoff pipeline:
 Each agent operates in workspace isolation via db.select_graph().
 """
 import os
+import uuid
 import json
 import logging
 from datetime import datetime
@@ -384,8 +385,7 @@ class MultiAgentPipeline:
 
 
 def demo_pipeline():
-    """Demo the multi-agent pipeline."""
-    # Example incident
+    """Run a self-contained demo in a disposable workspace."""
     incident = {
         "incident_id": "incident_001",
         "session_id": "session_abc",
@@ -395,23 +395,30 @@ Traceback (most recent call last):
     total_income += user['income']
 KeyError: 'income'
 """,
-        "failing_test": "test_incident_process_user_data_missing_income"
+        "failing_test": "test_incident_process_user_data_missing_income",
     }
 
-    pipeline = MultiAgentPipeline(workspace_id="alpha")
-    # Ingest sandbox service data for this workspace
-    pipeline.blast_radius_agent.resolver.ingest_sandbox_service()
-    result = pipeline.run(incident)
+    pipeline = MultiAgentPipeline(workspace_id=f"cli_demo_{uuid.uuid4().hex[:8]}")
+    graph = pipeline.blast_radius_agent.resolver.graph
+    try:
+        pipeline.blast_radius_agent.resolver.ingest_sandbox_service()
+        result = pipeline.run(incident)
 
-    print("\n=== Pipeline Results ===")
-    print(f"Fault Signature: {result.fault_signature}")
-    print(f"Root Cause Function: {result.root_cause_function}")
-    print(f"Affected Functions: {result.affected_functions}")
-    print(f"Blast Radius: {len(result.blast_radius)} functions")
-    print(f"Semantic Facts Created: {result.semantic_facts_created}")
-    print(f"Playbook Recommendations: {result.playbook_recommendations}")
-
-    return result
+        print("\n=== Pipeline Results ===")
+        print(f"Fault Signature: {result.fault_signature}")
+        print(f"Root Cause Function: {result.root_cause_function}")
+        print(f"Affected Functions: {result.affected_functions}")
+        print(f"Blast Radius: {len(result.blast_radius)} functions")
+        print(f"Semantic Facts Created: {result.semantic_facts_created}")
+        print(f"Playbook Recommendations: {result.playbook_recommendations}")
+        return result
+    finally:
+        try:
+            graph.delete()
+        finally:
+            pipeline.triage_agent.memory.close()
+            pipeline.blast_radius_agent.resolver.close()
+            pipeline.memory_curator_agent.memory.close()
 
 
 if __name__ == "__main__":

@@ -1,15 +1,28 @@
-node_modules
-dist
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local databases and generated output
+falkordb_data/
+logs/
 *.log
-.DS_Store
-coverage
+
+# Editors and operating systems
 .claude/
 CLAUDE.md
-__pycache__/
-.pytest_cache/
-*.pyc
-*.pyo
-.pytest_cache/
-htmlcov/
-.coverage
-.env
+.DS_Store
+Thumbs.db
+node_modules/

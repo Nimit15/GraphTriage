@@ -1,5 +1,5 @@
 {
-  "shortest_path": {
+  "failure_path_trace": {
     "mean_ms": 63.19921999966027,
     "median_ms": 55.487350000476,
     "min_ms": 54.78749999019783,
@@ -31,6 +31,12 @@
     "full_test_count": 50,
     "targeted_test_count": 5,
     "reduction_percentage": 90.0,
-    "tests_saved": 45
+    "tests_saved": 45,
+    "note": "Illustrative count estimate, not measured wall-clock savings."
+  },
+  "notes": {
+    "failure_path_trace": "Elapsed time for trace_failure_path, which performs multiple graph queries; not one native shortestPath query.",
+    "test_reduction": "Estimated count comparison, not measured wall-clock savings.",
+    "measurement_environment": "Not captured in the original benchmark record."
   }
 }

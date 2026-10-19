@@ -7,8 +7,6 @@ Creates a dedicated demo workspace and showcases Track 1 & Track 2 features.
 import os
 import sys
 import time
-import subprocess
-from datetime import datetime
 
 # Add src to path so we can import our modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -197,7 +195,7 @@ def main():
         # Verify workspace isolation
         print_subheader("Verifying workspace isolation")
         from core.temporal_memory import WorkspaceManager
-        wm = WorkspaceManager(base_name="repograph")
+        wm = WorkspaceManager(base_name="graphtriage_demo_workspace")
         try:
             demo_graph_handle = wm.get_workspace_graph("demo_ws")
             other_graph_handle = wm.get_workspace_graph("other_ws")
@@ -226,42 +224,33 @@ def main():
 
             print(f"Workspace isolation working: {isolated}")
             if isolated:
-                print("✓ Data in demo workspace is isolated from other workspaces")
+                print("[OK] Data in demo workspace is isolated from other workspaces")
             else:
-                print("✗ WARNING: Workspace isolation may not be working correctly")
+                print("[WARN] Workspace isolation may not be working correctly")
 
         except Exception as e:
             print(f"Isolation test error: {e}")
 
-        temporal_memory.close()
-        wm.close()
+        # Remove only the two dedicated workspace graphs created for this demo.
+        try:
+            wm.get_workspace_graph("demo_ws").delete()
+            wm.get_workspace_graph("other_ws").delete()
+        finally:
+            temporal_memory.close()
+            wm.close()
 
     except ImportError as e:
         print(f"Could not import temporal memory/pipeline modules: {e}")
         print("Skipping Track 2 demo...")
 
-    print_header("Final: Reseeding Base Graph for Viewing")
-
-    # Reseed the main graphtriage graph so http://localhost:3001 shows data
-    print("Reseeding main graphtriage graph for FalkorDB browser viewing...")
-    try:
-        # Clear and reseed main graph
-        main_resolver = IncidentResolver(graph_name="graphtriage")
-        main_resolver.ingest_sandbox_service()
-        main_resolver.close()
-        print("[OK] Main graphtriage graph reseeded successfully")
-    except Exception as e:
-        print(f"Error reseeding main graph: {e}")
-
-    # Close demo resolver
+    # Keep demo data isolated from the user's default graph.
     resolver.close()
 
     print_header("Demo Complete")
-    print("[OK] All Track 1 and Track 2 features demonstrated")
-    print("[OK] Graph data available at http://localhost:3001")
-    print("[OK] Use the FalkorDB browser to explore nodes and relationships")
-    print(f"[OK] Demo workspace: {demo_graph}")
-    print(f"[OK] Temporal memory workspace: {demo_graph}_memory")
+    print("Review the actual results above; this script does not modify the default graph.")
+    print("Demo graph: graphtriage_demo")
+    print("Temporal memory graph: graphtriage_demo_memory")
+    print("Open the FalkorDB Browser and select graphtriage_demo.")
 
 if __name__ == "__main__":
     main()

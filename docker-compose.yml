@@ -1,119 +1,50 @@
-version: '3.8'
-
 services:
-  # FalkorDB service - primary graph database
   falkordb:
     image: falkordb/falkordb:latest
-    container_name: falkordb
     ports:
-      - "6379:6379"     # Redis port for data
-      - "3000:3000"     # HTTP API port
+      - "6379:6379"
+      - "3000:3000"
     volumes:
-      - falkordb_data:/data
-    environment:
-      - FALKORDB_MEMORY_LIMIT=1g
-      - FALKORDB_MAX_IN_MEMORY=100000
-    restart: unless-stopped
+      - falkordb_data:/var/lib/falkordb/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
 
-  # GraphTriage application service
-  graphtriage:
+  demo:
     build: .
-    container_name: graphtriage-app
-    ports:
-      - "8000:8000"     # FastAPI application port
+    command: ["python", "scripts/run_live_demo.py"]
     environment:
-      # FalkorDB connection
-      - FALKORDB_HOST=falkordb
-      - FALKORDB_PORT=6379
-      # Application configuration
-      - PYTHONPATH=/app
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./docs:/app/docs:ro
-      - ./scripts:/app/scripts:ro
-      - ./logs:/app/logs
+      FALKORDB_HOST: falkordb
+      FALKORDB_PORT: "6379"
+      FALKORDB_USERNAME: ""
+      FALKORDB_PASSWORD: ""
+      FALKORDB_SSL: "false"
+      GRAPH_NAME: graphtriage_demo
+      PYTHONPATH: /app
     depends_on:
       falkordb:
         condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-m", "src.core.incident_resolver"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+    profiles: ["demo"]
 
-  # Benchmark service for performance testing
-  benchmark:
-    build: .
-    container_name: graphtriage-benchmark
-    command: ["python", "-m", "scripts.benchmark", "--workspace", "container_bench", "--host", "falkordb"]
-    environment:
-      - FALKORDB_HOST=falkordb
-      - FALKORDB_PORT=6379
-      - PYTHONPATH=/app
-    volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./docs:/app/docs:ro
-      - ./scripts:/app/scripts:ro
-      - benchmark_results:/app/results
-    depends_on:
-      falkordb:
-        condition: service_healthy
-      graphtriage:
-        condition: service_healthy
-    profiles:
-      - benchmark
-    restart: unless-stopped
-
-  # MCP Server service for tool-based interaction
   mcp-server:
     build: .
-    container_name: graphtriage-mcp
     command: ["python", "-m", "src.mcp.mcp_server"]
     environment:
-      - FALKORDB_HOST=falkordb
-      - FALKORDB_PORT=6379
-      - PYTHONPATH=/app
-    volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
+      FALKORDB_HOST: falkordb
+      FALKORDB_PORT: "6379"
+      FALKORDB_USERNAME: ""
+      FALKORDB_PASSWORD: ""
+      FALKORDB_SSL: "false"
+      GRAPH_NAME: graphtriage
+      PYTHONPATH: /app
     depends_on:
       falkordb:
         condition: service_healthy
-    restart: unless-stopped
-    profiles:
-      - mcp
+    profiles: ["mcp"]
 
 volumes:
   falkordb_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./falkordb_data
-
-  benchmark_results:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./benchmark_results
-
-# Network for service discovery
-networks:
-  default:
-    driver: bridge
-    ipam:
-      config:
-        - base_ip: 172.20.0.1
-          gateway: 172.20.0.1
